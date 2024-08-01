@@ -68,7 +68,7 @@ const uploadDocument = (req, res) => {
 
     // Validate that uploadedBy is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(uploadedBy)) {
-      return res.status(400).json({ error: "Invalid user ID format" });
+      return res.status(400).json({ error: "Invalid user ID format" })
     }
 
     try {
@@ -80,17 +80,20 @@ const uploadDocument = (req, res) => {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
+
       if (decodedToken.email !== user.email) {
         return res.status(401).json({ message: "User Not Allowed!!!" });
       }
+
       // File operations are only done after successful validation
       const originalFileName = req.file.originalname;
       const securePath = path.join("secure_uploads", req.file.filename); // Filename with timestamp and original name
-      const baseUrl = process.env.BASE_URL || 'http://localhost:5000'; // Default to localhost if BASE_URL is not set
-      const localhostLink = `${baseUrl}/uploads/${req.file.filename}`;
+      const localhostLink = `http://localhost:5000/uploads/${req.file.filename}`;
+
       // Move the file to the secure directory
       fs.mkdirSync("secure_uploads", { recursive: true });
       fs.renameSync(req.file.path, securePath);
+
       // Create a new document entry
       const newDocument = new Document({
         name,
@@ -100,7 +103,9 @@ const uploadDocument = (req, res) => {
         downloadLink: localhostLink,
         rscLink: securePath,
       });
+
       const savedDocument = await newDocument.save();
+
       // Notify admins about the new document
       const parentFolderDoc = await Folder.findById(savedDocument.parentFolder);
       if (!parentFolderDoc) {
@@ -110,7 +115,9 @@ const uploadDocument = (req, res) => {
       let body = `Document uploaded in ${parentFolderDoc.name}`;
       const grandParentFolder = await Folder.findById(parentFolderDoc.parentFolder);
       body += grandParentFolder ? `, under ${grandParentFolder.name} to be accepted` : ' in GATE';
+
       const title = newDocument.name;
+
       const adminUsers = await User.find({ isAdmin: true, token: { $exists: true, $ne: null } });
       const tokens = adminUsers.map(admin => admin.token);
       const success = await sendFcmMessage(tokens, title, body);
@@ -128,6 +135,7 @@ const uploadDocument = (req, res) => {
       if (fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
       }
+
       return res.status(500).json({ error: "Failed to upload the document" });
     }
   });
