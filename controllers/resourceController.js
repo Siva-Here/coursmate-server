@@ -9,8 +9,7 @@ require('dotenv').config();
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
-// Send email function
-const sendMail = async (to, subject, text, cc = [], bcc = []) => {
+const sendMail = async (to, subject, text) => {
   try {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -30,9 +29,7 @@ const sendMail = async (to, subject, text, cc = [], bcc = []) => {
       },
       to: to,
       subject: subject,
-      text: text,
-      cc: cc,
-      bcc: bcc
+      text: text
     };
 
     const info = await transporter.sendMail(mailOptions);
@@ -128,19 +125,13 @@ const createResource = async (req, res) => {
         // Retrieve all user emails
         const allUsers = await User.find({}, 'email');
         // const allEmails = allUsers.map(user => user.email);
-        const allEmails = ["n200086@rguktn.ac.in","sivahere9484@gmail.com"];
-
-        const adminEmails = process.env.ADMIN_EMAILS.split(",");
-
-        // Filter out admin emails from all emails
-        const userEmails = allEmails.filter(email => !adminEmails.includes(email));
-
+        const allEmails =["sivahere9484@gmail.com"];
         // Send email to all users
         const emailSubject = `New Placement Resource: ${name}`;
         const emailText = `A new placement resource "${name}" has been uploaded. Check it out!`;
 
         // Send email
-        // await sendMail(allEmails, emailSubject, emailText, adminEmails, userEmails);
+        await sendMail(allEmails, emailSubject, emailText);
         console.log("Emails sent successfully");
       } catch (error) {
         console.error("Error sending emails:", error);
@@ -155,6 +146,7 @@ const createResource = async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 const getAllResource = async (req, res) => {
   try {
